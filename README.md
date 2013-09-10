@@ -305,3 +305,25 @@ When the Bridge has been discovered one can use the IP to interact with the Brid
 ### Getting Data
 
 ### Using Actuators
+
+Sending a HTTP-POST or a CoaP-POST request can be used to send a configured request to dynamix via the Bridge, this may be done like this
+
+```Java
+HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
+conn.setDoOutput(true);
+conn.setRequestMethod("POST");
+conn.addRequestProperty("format", "xml");
+Random generator = new Random();
+int rr = generator.nextInt(255);
+int gg = generator.nextInt(255);
+int bb = generator.nextInt(255);
+System.out.println(rr+" "+gg+" "+bb);
+String payload="String action_type=setcolor;;String r_channel="+rr+";;String g_channel="+gg+";;String b_channel="+bb+"";
+conn.getOutputStream().write(payload.getBytes());
+new InputStreamReader((conn.getInputStream()));
+								 
+String output;
+System.out.println("Output from Server .... \n");
+conn.disconnect();
+```
+(This Code is from the java/java/Lightswitch project)
