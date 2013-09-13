@@ -35,6 +35,21 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.6.4</version>
-        </dependency>   
+        </dependency> 
+         <dependency>
+            <groupId>com.strategicgains</groupId>
+            <artifactId>RestExpress</artifactId>
+            <version>0.9.4</version>
+            	<exclusions>
+		            <exclusion>
+		              	<groupId>xmlpull</groupId>
+					 	<artifactId>xmlpull</artifactId>
+		            </exclusion>
+		            <exclusion>
+		              	<groupId>io.netty</groupId>
+						<artifactId>netty</artifactId>
+		            </exclusion>
+	          </exclusions>
+        </dependency>  
       </dependencies>
 </project>

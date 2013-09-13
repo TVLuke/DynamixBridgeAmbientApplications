@@ -204,78 +204,97 @@ function onAlarm(alarm)
 	{
 		//scedule next alert in half a minute (this will probably be executed as one minute but whatever)
 		chrome.alarms.create('refresh', {periodInMinutes: 1});
-		//are you currently connected with any dynamix instance?
-		if(currentdynamixips.length>0)
+		//update the list of connected Dynamix Insatnces using the localhost
+		if(activated)
 		{
-			//console.log("I am currently connected to some dynamix instance");
-			//if you are, check if it is still there and what context type are avaliable
-			for(i=0; i<currentdynamixips.length; i++)
+			console.log("ask the bridge");
+			var xhr2 = new XMLHttpRequest();
+			xhr2.open("GET", "http://localhost:53486/bridges", true);
+			xhr2.setRequestHeader("format", "xml");
+			xhr2.onreadystatechange = function() 
 			{
-				var ip=currentdynamixips[i];
-				var xhr = new XMLHttpRequest();
-				xhr.open("GET", "http://"+ip+":8081/contexttypes", true);
-				xhr.setRequestHeader("format", "xml");
-				xhr.onreadystatechange = function() 
+				if (xhr2.readyState == 4) 
 				{
-					if (xhr.readyState == 4) 
+					console.log("ready state change");
+					var response = xhr2.responseText;
+					console.log(response);
+					currentdynamixips = response.split(",");
+				}
+			}
+			xhr2.send();
+			//are you currently connected with any dynamix instance?
+			if(currentdynamixips.length>0)
+			{
+				//console.log("I am currently connected to some dynamix instance");
+				//if you are, check if it is still there and what context type are avaliable
+				for(i=0; i<currentdynamixips.length; i++)
+				{
+					var ip=currentdynamixips[i];
+					var xhr = new XMLHttpRequest();
+					xhr.open("GET", "http://"+ip+":8081/service/dynamix/contexttypes", true);
+					xhr.setRequestHeader("format", "xml");
+					xhr.onreadystatechange = function() 
 					{
-						var startstring="";
-						startstring = xhr.responseText.substring(0, 14);
-						if(startstring==="<contexttypes>")
+						if (xhr.readyState == 4) 
 						{
-							//console.log(ip);
-							//console.log(startstring);
-							xmlDoc=StringtoXML(xhr.responseText);
-							//console.log(xmlDoc);
-							children=xmlDoc.getElementsByTagName("contexttype");
-							for (i=0;i<children.length;i++)
+							var startstring="";
+							startstring = xhr.responseText.substring(0, 14);
+							if(startstring==="<contexttypes>")
 							{
-									//onsole.log(children[i].nodeName+":");
-									//console.log(children[i].nodeType+":");
-									//console.log(children[i].tagName+":");
-									//console.log(children[i].nodeValue+".");
-									grandchildren = children[i].getElementsByTagName("name");
-									for(j=0;j<grandchildren.length; j++)
-									{
-										//console.log(grandchildren[j].nodeName+":(g)");
-										//console.log(grandchildren[j].nodeValue);
-										//console.log(grandchildren[j].textContent);
-										contextname = grandchildren[j].textContent;
-										if(contextname==="org.ambientdynamix.contextplugins.artnet")
+								console.log(ip);
+								//console.log(startstring);
+								xmlDoc=StringtoXML(xhr.responseText);
+								//console.log(xmlDoc);
+								children=xmlDoc.getElementsByTagName("contexttype");
+								for (i=0;i<children.length;i++)
+								{
+										//onsole.log(children[i].nodeName+":");
+										//console.log(children[i].nodeType+":");
+										//console.log(children[i].tagName+":");
+										//console.log(children[i].nodeValue+".");
+										grandchildren = children[i].getElementsByTagName("name");
+										for(j=0;j<grandchildren.length; j++)
 										{
-											//console.log("lol");
-											var active = children[i].getElementsByTagName("active");
-											if(active[0].textContent==="true")
+											//console.log(grandchildren[j].nodeName+":(g)");
+											//console.log(grandchildren[j].nodeValue);
+											//console.log(grandchildren[j].textContent);
+											contextname = grandchildren[j].textContent;
+											if(contextname==="org.ambientdynamix.contextplugins.artnet")
 											{
-												//nothing.
-												console.log("this Dynamix Instance has the Artnet Plugin activated");
-											}
-											else
-											{
-												if(activated){requestLight(ip);}
+												//console.log("lol");
+												var active = children[i].getElementsByTagName("active");
+												if(active[0].textContent==="true")
+												{
+													//nothing.
+													console.log("this Dynamix Instance has the Artnet Plugin activated");
+												}
+												else
+												{
+													if(activated){requestLight(ip);}
+												}
 											}
 										}
-									}
+								}
+								//actual parsing of the response text comes here
+								startstring="";
 							}
-							//actual parsing of the response text comes here
-							startstring="";
+							else
+							{
+								//here we would need to delete this ip out of the array because it is no longer connected.
+								//deleteipfromdynamix(ip);
+							
+							}
+							//JSON.parse does not evaluate the attacker's scripts.
+							//var resp = JSON.parse(xhr.responseText);
 						}
-						else
-						{
-							//here we would need to delete this ip out of the array because it is no longer connected.
-							//deleteipfromdynamix(ip);
-						
-						}
-						//JSON.parse does not evaluate the attacker's scripts.
-						//var resp = JSON.parse(xhr.responseText);
-  					}
+					}
+					xhr.send();
 				}
-				xhr.send();
 			}
-		}
-		else
-		{
-			//console.log("currently now dynamix instance connected");
+			else
+			{
+				//console.log("currently no dynamix instance connected");
+			}
 		}
 	}	 
 	else 
@@ -304,7 +323,7 @@ function StringtoXML(text)
 function requestLight(ip)
 {
 	var xhr = new XMLHttpRequest();
-	xhr.open("PUT", "http://"+ip+":8081/contexttypes", true);
+	xhr.open("PUT", "http://"+ip+":8081/service/dynamix/contexttypes", true);
 	xhr.setRequestHeader("format", "xml");
 	xhr.onreadystatechange = function() 
 	{
@@ -313,9 +332,13 @@ function requestLight(ip)
 
 		}
 	}
-	xhr.send("org.ambientdynamix.contextplugins.artnet");
+	xhr.send("String action_type=\"subscribe\";;String context_type=\"org.ambientdynamix.contextplugins.artnet\"");
 }
 
+function checkForDynamixBrdiges()
+{
+
+}
 
 function updatePopup()
 { 
